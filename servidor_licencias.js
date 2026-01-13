@@ -127,7 +127,7 @@ app.get('/', (req, res) => {
 // API: Generar licencia
 app.post('/api/generar', (req, res) => {
   try {
-    const { email, nombre, clave_admin, duracion_dias = 365 } = req.body;
+    const { email, nombre, clave_admin, tipo_licencia = 'anual' } = req.body;
     
     if (!email || !nombre || !clave_admin) {
       return res.json({ success: false, error: 'Faltan datos requeridos' });
@@ -137,10 +137,20 @@ app.post('/api/generar', (req, res) => {
       return res.json({ success: false, error: 'Clave de administrador incorrecta' });
     }
     
+    // Definir duración según tipo de licencia
+    const tipos_licencia = {
+      'prueba': { dias: 7, nombre: 'Prueba (7 días)' },
+      'mensual': { dias: 30, nombre: 'Mensual' },
+      'anual': { dias: 365, nombre: 'Anual' },
+      'vitalicia': { dias: 36500, nombre: 'Vitalicia (100 años)' } // 100 años = vitalicia
+    };
+    
+    const tipo_config = tipos_licencia[tipo_licencia] || tipos_licencia['anual'];
+    
     const db = cargarBaseDatos();
     const clave = generarClave();
     const fecha_creacion = new Date();
-    const fecha_expiracion = new Date(fecha_creacion.getTime() + (duracion_dias * 24 * 60 * 60 * 1000));
+    const fecha_expiracion = new Date(fecha_creacion.getTime() + (tipo_config.dias * 24 * 60 * 60 * 1000));
     
     const licencia = {
       email,
@@ -150,7 +160,8 @@ app.post('/api/generar', (req, res) => {
       fecha_expiracion: fecha_expiracion.toISOString(),
       activada: false,
       activa: true,
-      tipo: 'standard',
+      tipo: tipo_config.nombre,
+      duracion_dias: tipo_config.dias,
       max_activaciones: 1,
       activaciones: 0
     };
@@ -165,7 +176,7 @@ app.post('/api/generar', (req, res) => {
         nombre,
         clave,
         expira: fecha_expiracion.toISOString(),
-        tipo: 'standard'
+        tipo: tipo_config.nombre
       }
     });
     
@@ -354,12 +365,15 @@ app.get('/admin', (req, res) => {
           font-weight: bold;
           color: #555;
         }
-        input {
+        input, select {
           width: 100%;
           padding: 10px;
           border: 1px solid #ddd;
           border-radius: 5px;
           font-size: 14px;
+        }
+        select {
+          cursor: pointer;
         }
         button {
           background: #007bff;
@@ -482,6 +496,15 @@ app.get('/admin', (req, res) => {
             <input type="text" id="nombre" required placeholder="Juan Pérez">
           </div>
           <div class="form-group">
+            <label>Tipo de Licencia:</label>
+            <select id="tipo_licencia">
+              <option value="prueba">🧪 Prueba (7 días)</option>
+              <option value="mensual">📅 Mensual (30 días)</option>
+              <option value="anual" selected>📆 Anual (365 días)</option>
+              <option value="vitalicia">♾️ Vitalicia (Sin vencimiento)</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Clave Admin:</label>
             <input type="password" id="clave_admin" required placeholder="ADMIN123">
           </div>
@@ -498,6 +521,7 @@ app.get('/admin', (req, res) => {
                 <th>Email</th>
                 <th>Nombre</th>
                 <th>Clave</th>
+                <th>Tipo</th>
                 <th>Estado</th>
                 <th>Creada</th>
                 <th>Expira</th>
@@ -512,6 +536,7 @@ app.get('/admin', (req, res) => {
                     <code>${lic.clave}</code>
                     <button class="copy-button" onclick="copiarTexto('${lic.clave}')">📋</button>
                   </td>
+                  <td>${lic.tipo || 'Standard'}</td>
                   <td>
                     ${lic.activada === true ? '<span class="badge badge-success">✅ Activada</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}
                     ${lic.activa === false ? '<span class="badge badge-danger">❌ Desactivada</span>' : ''}
@@ -530,13 +555,14 @@ app.get('/admin', (req, res) => {
           e.preventDefault();
           const email = document.getElementById('email').value;
           const nombre = document.getElementById('nombre').value;
+          const tipo_licencia = document.getElementById('tipo_licencia').value;
           const clave_admin = document.getElementById('clave_admin').value;
           
           try {
             const response = await fetch('/api/generar', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, nombre, clave_admin })
+              body: JSON.stringify({ email, nombre, tipo_licencia, clave_admin })
             });
             const data = await response.json();
             const resultado = document.getElementById('resultado');
@@ -548,6 +574,13 @@ app.get('/admin', (req, res) => {
                 <h3>✅ Licencia Generada</h3>
                 <div class="licencia-box">
                   <strong>📧 Email:</strong> \${data.licencia.email}<br>
+                  <strong>👤 Nombre:</strong> \${data.licencia.nombre}<br>
+                  <strong>🔑 Clave:</strong> <code>\${data.licencia.clave}</code>
+                  <button class="copy-button" onclick="copiarTexto('\${data.licencia.clave}')">📋 Copiar</button><br>
+                  <strong>📦 Tipo:</strong> \${data.licencia.tipo}<br>
+                  <strong>📅 Expira:</strong> \${new Date(data.licencia.expira).toLocaleDateString('es-PE')}<br>
+                </div>
+              \`;
                   <strong>👤 Nombre:</strong> \${data.licencia.nombre}<br>
                   <strong>🔑 Clave:</strong> <code>\${data.licencia.clave}</code>
                   <button class="copy-button" onclick="copiarTexto('\${data.licencia.clave}')">📋 Copiar</button><br>
