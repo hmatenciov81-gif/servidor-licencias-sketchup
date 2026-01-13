@@ -583,8 +583,8 @@ app.listen(PORT, () => {
   console.log('='.repeat(60));
   console.log('🔐 SERVIDOR DE LICENCIAS INICIADO');
   console.log('='.repeat(60));
-  console.log(\`✅ Puerto: \${PORT}\`);
-  console.log(\`📊 Panel: http://localhost:\${PORT}/admin\`);
+  console.log(`✅ Puerto: ${PORT}`);
+  console.log(`📊 Panel: http://localhost:${PORT}/admin`);
   console.log('='.repeat(60));
   
   if (!fs.existsSync(DB_FILE)) {
@@ -592,7 +592,7 @@ app.listen(PORT, () => {
     console.log('✓ Base de datos inicializada');
   } else {
     const db = cargarBaseDatos();
-    console.log(\`✓ Licencias: \${Object.keys(db.licencias).length}\`);
+    console.log(`✓ Licencias: ${Object.keys(db.licencias).length}`);
   }
   console.log('');
 });
