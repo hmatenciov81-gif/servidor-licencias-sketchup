@@ -600,11 +600,6 @@ app.get('/admin', (req, res) => {
                   </td>
                 </tr>
               `).join('')}
-                  </td>
-                  <td>${new Date(lic.fecha_creacion).toLocaleDateString('es-PE')}</td>
-                  <td>${new Date(lic.fecha_expiracion).toLocaleDateString('es-PE')}</td>
-                </tr>
-              `).join('')}
             </tbody>
           </table>
         `}
