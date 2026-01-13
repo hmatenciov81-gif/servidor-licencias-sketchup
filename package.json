@@ -1,5 +1,16 @@
 {
+  "name": "servidor-licencias-sketchup",
+  "version": "1.0.0",
+  "description": "Servidor de licencias para plugins de SketchUp",
+  "main": "servidor_licencias.js",
+  "scripts": {
+    "start": "node servidor_licencias.js"
+  },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
