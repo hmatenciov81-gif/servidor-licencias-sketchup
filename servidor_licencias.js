@@ -275,6 +275,54 @@ app.post('/api/validar', (req, res) => {
   }
 });
 
+// API: Desactivar/Reactivar licencia
+app.post('/api/toggle-licencia', (req, res) => {
+  try {
+    const { clave, accion, clave_admin } = req.body;
+    
+    if (!clave || !accion || !clave_admin) {
+      return res.json({ success: false, error: 'Faltan datos requeridos' });
+    }
+    
+    if (clave_admin !== ADMIN_KEY) {
+      return res.json({ success: false, error: 'Clave de administrador incorrecta' });
+    }
+    
+    const db = cargarBaseDatos();
+    const licencia = db.licencias[clave];
+    
+    if (!licencia) {
+      return res.json({ success: false, error: 'Licencia no encontrada' });
+    }
+    
+    if (accion === 'desactivar') {
+      licencia.activada = false;
+      licencia.fecha_desactivacion = new Date().toISOString();
+    } else if (accion === 'reactivar') {
+      licencia.activada = true;
+      licencia.fecha_reactivacion = new Date().toISOString();
+    } else {
+      return res.json({ success: false, error: 'Acción no válida' });
+    }
+    
+    guardarBaseDatos(db);
+    
+    res.json({
+      success: true,
+      mensaje: `Licencia ${accion === 'desactivar' ? 'desactivada' : 'reactivada'} correctamente`,
+      licencia: {
+        clave: licencia.clave,
+        email: licencia.email,
+        activada: licencia.activada
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error al toggle licencia:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
 // PANEL ADMIN MEJORADO
 app.get('/admin', (req, res) => {
   const db = cargarBaseDatos();
@@ -525,6 +573,7 @@ app.get('/admin', (req, res) => {
                 <th>Estado</th>
                 <th>Creada</th>
                 <th>Expira</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -540,6 +589,17 @@ app.get('/admin', (req, res) => {
                   <td>
                     ${lic.activada === true ? '<span class="badge badge-success">✅ Activada</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}
                     ${lic.activa === false ? '<span class="badge badge-danger">❌ Desactivada</span>' : ''}
+                  </td>
+                  <td>${new Date(lic.fecha_creacion).toLocaleDateString('es-PE')}</td>
+                  <td>${new Date(lic.fecha_expiracion).toLocaleDateString('es-PE')}</td>
+                  <td>
+                    ${lic.activada === true 
+                      ? `<button class="copy-button" style="background:#dc3545" onclick="toggleLicencia('${lic.clave}', 'desactivar')">❌ Desactivar</button>`
+                      : `<button class="copy-button" style="background:#28a745" onclick="toggleLicencia('${lic.clave}', 'reactivar')">✅ Reactivar</button>`
+                    }
+                  </td>
+                </tr>
+              `).join('')}
                   </td>
                   <td>${new Date(lic.fecha_creacion).toLocaleDateString('es-PE')}</td>
                   <td>${new Date(lic.fecha_expiracion).toLocaleDateString('es-PE')}</td>
@@ -598,6 +658,38 @@ app.get('/admin', (req, res) => {
         
         function copiarTexto(texto) {
           navigator.clipboard.writeText(texto).then(() => alert('✅ Copiado'));
+        }
+        
+        async function toggleLicencia(clave, accion) {
+          const clave_admin = prompt('Ingrese la clave de administrador:');
+          if (!clave_admin) return;
+          
+          const confirmar = confirm(
+            accion === 'desactivar' 
+              ? '¿Desactivar esta licencia? El cliente ya no podrá usar los plugins.'
+              : '¿Reactivar esta licencia? El cliente podrá volver a usar los plugins.'
+          );
+          
+          if (!confirmar) return;
+          
+          try {
+            const response = await fetch('/api/toggle-licencia', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ clave, accion, clave_admin })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              alert('✅ ' + data.mensaje);
+              location.reload();
+            } else {
+              alert('❌ Error: ' + data.error);
+            }
+          } catch (error) {
+            alert('❌ Error: ' + error.message);
+          }
         }
       </script>
     </body>
