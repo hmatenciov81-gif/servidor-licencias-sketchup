@@ -1,271 +1,270 @@
-// ==============================================================================
-// SERVIDOR SIMPLE DE LICENCIAS
-// ==============================================================================
-// Versión simplificada y fácil de instalar
-// ==============================================================================
-
 const express = require('express');
+const cors = require('cors');
+const crypto = require('crypto');
+const fs = require('fs');
 const app = express();
-const PORT = 3000;
+
+// Configuración
+const PORT = process.env.PORT || 3000;
+const ADMIN_KEY = process.env.ADMIN_KEY || 'ADMIN123';
+const DB_FILE = './licencias.json';
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 
-// Base de datos en memoria (temporal)
-let licencias = {};
-let activaciones = [];
-
-console.log('\n' + '='.repeat(60));
-console.log('INICIANDO SERVIDOR DE LICENCIAS...');
-console.log('='.repeat(60) + '\n');
-
-// ==============================================================================
-// FUNCIONES AUXILIARES
-// ==============================================================================
-
-function generarClaveLicencia() {
-  const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let partes = [];
-  
-  // Generar 3 bloques de 4 caracteres
-  for (let i = 0; i < 3; i++) {
-    let bloque = '';
-    for (let j = 0; j < 4; j++) {
-      bloque += caracteres[Math.floor(Math.random() * caracteres.length)];
+// Funciones de base de datos
+function cargarBaseDatos() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const data = fs.readFileSync(DB_FILE, 'utf8');
+      return JSON.parse(data);
     }
-    partes.push(bloque);
+  } catch (error) {
+    console.error('Error al cargar BD:', error);
   }
-  
-  // Calcular checksum
-  const todos = partes.join('');
-  const suma = todos.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const checksum = (suma % 10000).toString().padStart(4, '0');
-  partes.push(checksum);
-  
-  return partes.join('-');
+  return { licencias: {}, activaciones: [] };
+}
+
+function guardarBaseDatos(db) {
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error al guardar BD:', error);
+    return false;
+  }
+}
+
+function generarClave() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let clave = '';
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      clave += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    if (i < 3) clave += '-';
+  }
+  return clave;
 }
 
 function validarClave(clave) {
-  const regex = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[0-9]{4}$/;
-  if (!regex.test(clave)) return false;
-  
-  const partes = clave.split('-');
-  const suma = partes.slice(0, 3).join('').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  const checksumEsperado = (suma % 10000).toString().padStart(4, '0');
-  
-  return partes[3] === checksumEsperado;
+  const hash = crypto.createHash('sha256').update(clave).digest('hex');
+  return hash.substring(0, 8);
 }
 
-// ==============================================================================
-// API - CREAR LICENCIA
-// ==============================================================================
-
-app.post('/api/admin/crear-licencia', (req, res) => {
-  const { admin_key, email, nombre, empresa, tipo, duracion_dias } = req.body;
-  
-  // Verificar clave de administrador
-  if (admin_key !== 'ADMIN123') {
-    return res.json({ 
-      success: false, 
-      error: 'Clave de administrador incorrecta' 
-    });
-  }
-  
-  // Validar datos
-  if (!email || !nombre) {
-    return res.json({ 
-      success: false, 
-      error: 'Email y nombre son requeridos' 
-    });
-  }
-  
-  // Generar licencia
-  const clave = generarClaveLicencia();
-  const ahora = new Date();
-  const expira = new Date(ahora);
-  expira.setDate(expira.getDate() + (parseInt(duracion_dias) || 365));
-  
-  const licencia = {
-    clave: clave,
-    email: email,
-    nombre: nombre,
-    empresa: empresa || null,
-    tipo: tipo || 'standard',
-    fecha_creacion: ahora.toISOString(),
-    fecha_expiracion: expira.toISOString(),
-    activada: false,
-    activa: true,
-    max_activaciones: tipo === 'empresa' ? 10 : 1
-  };
-  
-  licencias[clave] = licencia;
-  
-  console.log(`✓ Licencia creada: ${clave} para ${email}`);
-  
-  res.json({
-    success: true,
-    licencia: {
-      clave: clave,
-      email: email,
-      nombre: nombre,
-      empresa: empresa,
-      tipo: tipo,
-      expira: expira.toISOString(),
-      max_activaciones: licencia.max_activaciones
-    }
-  });
+// API: Página principal
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Servidor de Licencias</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          max-width: 800px;
+          margin: 50px auto;
+          padding: 20px;
+          background: #f5f5f5;
+        }
+        .container {
+          background: white;
+          padding: 30px;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .endpoint {
+          background: #f8f9fa;
+          padding: 15px;
+          margin: 10px 0;
+          border-left: 4px solid #007bff;
+          border-radius: 5px;
+        }
+        code {
+          background: #e9ecef;
+          padding: 2px 6px;
+          border-radius: 3px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>🔐 Servidor de Licencias</h1>
+        <p>Servidor funcionando correctamente.</p>
+        
+        <h2>📡 Endpoints Disponibles:</h2>
+        
+        <div class="endpoint">
+          <strong>POST /api/generar</strong><br>
+          Generar nueva licencia (requiere clave admin)
+        </div>
+        
+        <div class="endpoint">
+          <strong>POST /api/activar</strong><br>
+          Activar licencia con email y clave
+        </div>
+        
+        <div class="endpoint">
+          <strong>POST /api/validar</strong><br>
+          Validar licencia existente
+        </div>
+        
+        <div class="endpoint">
+          <strong>GET /admin</strong><br>
+          Panel de administración
+        </div>
+        
+        <p><a href="/admin">→ Ir al Panel de Administración</a></p>
+      </div>
+    </body>
+    </html>
+  `);
 });
 
-// ==============================================================================
-// API - ACTIVAR LICENCIA
-// ==============================================================================
+// API: Generar licencia
+app.post('/api/generar', (req, res) => {
+  try {
+    const { email, nombre, clave_admin, duracion_dias = 365 } = req.body;
+    
+    if (!email || !nombre || !clave_admin) {
+      return res.json({ success: false, error: 'Faltan datos requeridos' });
+    }
+    
+    if (clave_admin !== ADMIN_KEY) {
+      return res.json({ success: false, error: 'Clave de administrador incorrecta' });
+    }
+    
+    const db = cargarBaseDatos();
+    const clave = generarClave();
+    const fecha_creacion = new Date();
+    const fecha_expiracion = new Date(fecha_creacion.getTime() + (duracion_dias * 24 * 60 * 60 * 1000));
+    
+    const licencia = {
+      email,
+      nombre,
+      clave,
+      fecha_creacion: fecha_creacion.toISOString(),
+      fecha_expiracion: fecha_expiracion.toISOString(),
+      activada: false,
+      activa: true,
+      tipo: 'standard',
+      max_activaciones: 1,
+      activaciones: 0
+    };
+    
+    db.licencias[clave] = licencia;
+    guardarBaseDatos(db);
+    
+    res.json({
+      success: true,
+      licencia: {
+        email,
+        nombre,
+        clave,
+        expira: fecha_expiracion.toISOString(),
+        tipo: 'standard'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error al generar licencia:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
 
+// API: Activar licencia
 app.post('/api/activar', (req, res) => {
-  const { email, clave_licencia, nombre, empresa, version } = req.body;
-  
-  console.log(`📥 Solicitud activación: ${email} - ${clave_licencia}`);
-  
-  // Validar datos
-  if (!email || !clave_licencia || !nombre) {
-    return res.json({ 
-      valida: false, 
-      error: 'Datos incompletos' 
-    });
-  }
-  
-  // Validar formato de clave
-  if (!validarClave(clave_licencia)) {
-    return res.json({ 
-      valida: false, 
-      error: 'Formato de clave inválido' 
-    });
-  }
-  
-  // Buscar licencia
-  const lic = licencias[clave_licencia];
-  
-  if (!lic) {
-    console.log(`❌ Licencia no encontrada: ${clave_licencia}`);
-    return res.json({ 
-      valida: false, 
-      error: 'Licencia no encontrada' 
-    });
-  }
-  
-  // Verificar email
-  if (lic.email !== email) {
-    console.log(`❌ Email no coincide`);
-    return res.json({ 
-      valida: false, 
-      error: 'Email no coincide' 
-    });
-  }
-  
-  // Verificar si está activa
-  if (!lic.activa) {
-    console.log(`❌ Licencia desactivada`);
-    return res.json({ 
-      valida: false, 
-      error: 'Licencia desactivada' 
-    });
-  }
-  
-  // Verificar expiración
-  if (new Date() > new Date(lic.fecha_expiracion)) {
-    console.log(`❌ Licencia expirada`);
-    return res.json({ 
-      valida: false, 
-      error: 'Licencia expirada' 
-    });
-  }
-  
-  // Registrar activación
-  lic.activada = true;
-  activaciones.push({
-    clave_licencia: clave_licencia,
-    email: email,
-    nombre: nombre,
-    empresa: empresa,
-    version: version,
-    fecha: new Date().toISOString()
-  });
-  
-  console.log(`✅ Licencia activada: ${clave_licencia}`);
-  
-  res.json({
-    valida: true,
-    mensaje: 'Licencia activada correctamente',
-    expiracion: lic.fecha_expiracion,
-    tipo: lic.tipo
-  });
-});
-
-// ==============================================================================
-// API - VERIFICAR LICENCIA
-// ==============================================================================
-
-app.post('/api/verificar', (req, res) => {
-  const { email, clave_licencia } = req.body;
-  const lic = licencias[clave_licencia];
-  
-  if (!lic) {
-    return res.json({ valida: false, error: 'Licencia no encontrada' });
-  }
-  
-  if (lic.email !== email) {
-    return res.json({ valida: false, error: 'Email no coincide' });
-  }
-  
-  if (!lic.activa) {
-    return res.json({ valida: false, error: 'Licencia desactivada' });
-  }
-  
-  if (new Date() > new Date(lic.fecha_expiracion)) {
-    return res.json({ valida: false, error: 'Licencia expirada' });
-  }
-  
-  res.json({
-    valida: true,
-    expiracion: lic.fecha_expiracion,
-    tipo: lic.tipo
-  });
-});
-
-// ==============================================================================
-// API - ESTADÍSTICAS
-// ==============================================================================
-
-app.post('/api/admin/estadisticas', (req, res) => {
-  const { admin_key } = req.body;
-  
-  if (admin_key !== 'ADMIN123') {
-    return res.json({ error: 'Acceso denegado' });
-  }
-  
-  const lics = Object.values(licencias);
-  const ahora = new Date();
-  
-  res.json({
-    success: true,
-    estadisticas: {
-      total_licencias: lics.length,
-      licencias_activas: lics.filter(l => l.activa).length,
-      licencias_activadas: lics.filter(l => l.activada).length,
-      licencias_expiradas: lics.filter(l => new Date(l.fecha_expiracion) < ahora).length,
-      total_activaciones: activaciones.length
+  try {
+    const { email, clave_licencia, nombre } = req.body;
+    
+    if (!email || !clave_licencia) {
+      return res.json({ valida: false, error: 'Email y clave son requeridos' });
     }
-  });
+    
+    const db = cargarBaseDatos();
+    const licencia = db.licencias[clave_licencia];
+    
+    if (!licencia) {
+      return res.json({ valida: false, error: 'Licencia no encontrada' });
+    }
+    
+    if (licencia.email.toLowerCase() !== email.toLowerCase()) {
+      return res.json({ valida: false, error: 'Email no coincide con la licencia' });
+    }
+    
+    if (!licencia.activa) {
+      return res.json({ valida: false, error: 'Licencia desactivada' });
+    }
+    
+    const ahora = new Date();
+    const expiracion = new Date(licencia.fecha_expiracion);
+    
+    if (ahora > expiracion) {
+      return res.json({ valida: false, error: 'Licencia expirada' });
+    }
+    
+    // Activar licencia
+    licencia.activada = true;
+    licencia.fecha_activacion = ahora.toISOString();
+    licencia.activaciones = (licencia.activaciones || 0) + 1;
+    
+    // Registrar activación
+    db.activaciones.push({
+      clave: clave_licencia,
+      email,
+      nombre,
+      fecha: ahora.toISOString()
+    });
+    
+    guardarBaseDatos(db);
+    
+    res.json({
+      valida: true,
+      mensaje: 'Licencia activada correctamente',
+      expiracion: licencia.fecha_expiracion,
+      tipo: licencia.tipo
+    });
+    
+  } catch (error) {
+    console.error('Error al activar licencia:', error);
+    res.json({ valida: false, error: error.message });
+  }
 });
 
-// ==============================================================================
-// PÁGINAS WEB
-// ==============================================================================
+// API: Validar licencia
+app.post('/api/validar', (req, res) => {
+  try {
+    const { email, clave_licencia } = req.body;
+    
+    const db = cargarBaseDatos();
+    const licencia = db.licencias[clave_licencia];
+    
+    if (!licencia || !licencia.activada) {
+      return res.json({ valida: false });
+    }
+    
+    if (licencia.email.toLowerCase() !== email.toLowerCase()) {
+      return res.json({ valida: false });
+    }
+    
+    const ahora = new Date();
+    const expiracion = new Date(licencia.fecha_expiracion);
+    
+    res.json({
+      valida: ahora <= expiracion && licencia.activa,
+      expiracion: licencia.fecha_expiracion
+    });
+    
+  } catch (error) {
+    console.error('Error al validar licencia:', error);
+    res.json({ valida: false });
+  }
+});
 
-# Panel Admin Mejorado - Para agregar al servidor_licencias.js
-
-## Para actualizar tu panel admin, reemplaza la ruta GET '/admin' con este código:
-
-```javascript
+// PANEL ADMIN MEJORADO
 app.get('/admin', (req, res) => {
   const db = cargarBaseDatos();
   const licencias = Object.values(db.licencias || {});
@@ -285,7 +284,7 @@ app.get('/admin', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Panel de Administración - Licencias</title>
+      <title>Panel Admin - Licencias</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -315,8 +314,6 @@ app.get('/admin', (req, res) => {
           font-size: 14px;
           color: #0056b3;
         }
-        
-        /* ESTADÍSTICAS */
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -324,24 +321,15 @@ app.get('/admin', (req, res) => {
           margin: 20px 0;
         }
         .stat-card {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
           padding: 20px;
           border-radius: 10px;
           box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .stat-card.green {
-          background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        }
-        .stat-card.yellow {
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        .stat-card.red {
-          background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-        .stat-card.blue {
-          background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
+        .stat-card.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-card.yellow { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card.red { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .stat-card.blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
         .stat-number {
           font-size: 48px;
           font-weight: bold;
@@ -353,13 +341,9 @@ app.get('/admin', (req, res) => {
           text-transform: uppercase;
           letter-spacing: 1px;
         }
-        
         h2 {
           color: #555;
           margin: 30px 0 15px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
         }
         .form-group {
           margin: 15px 0;
@@ -370,7 +354,7 @@ app.get('/admin', (req, res) => {
           font-weight: bold;
           color: #555;
         }
-        input, select {
+        input {
           width: 100%;
           padding: 10px;
           border: 1px solid #ddd;
@@ -387,9 +371,21 @@ app.get('/admin', (req, res) => {
           font-size: 16px;
           margin-top: 10px;
         }
-        button:hover {
-          background: #0056b3;
+        button:hover { background: #0056b3; }
+        .refresh-button {
+          background: #6c757d;
+          float: right;
+          padding: 5px 15px;
+          font-size: 12px;
         }
+        .refresh-button:hover { background: #5a6268; }
+        .copy-button {
+          background: #28a745;
+          padding: 5px 10px;
+          font-size: 12px;
+          margin-left: 10px;
+        }
+        .copy-button:hover { background: #218838; }
         .result {
           margin-top: 20px;
           padding: 15px;
@@ -418,19 +414,11 @@ app.get('/admin', (req, res) => {
           margin-bottom: 10px;
           color: #007bff;
         }
-        .copy-button {
-          background: #28a745;
-          padding: 5px 10px;
-          font-size: 12px;
-          margin-left: 10px;
-        }
-        .copy-button:hover {
-          background: #218838;
-        }
         table {
           width: 100%;
           border-collapse: collapse;
           margin-top: 15px;
+          font-size: 14px;
         }
         th, td {
           padding: 12px;
@@ -449,25 +437,9 @@ app.get('/admin', (req, res) => {
           font-size: 12px;
           font-weight: bold;
         }
-        .badge-success {
-          background: #d4edda;
-          color: #155724;
-        }
-        .badge-warning {
-          background: #fff3cd;
-          color: #856404;
-        }
-        .badge-danger {
-          background: #f8d7da;
-          color: #721c24;
-        }
-        .refresh-button {
-          background: #6c757d;
-          float: right;
-        }
-        .refresh-button:hover {
-          background: #5a6268;
-        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
       </style>
     </head>
     <body>
@@ -475,12 +447,11 @@ app.get('/admin', (req, res) => {
         <h1>🔐 Panel de Administración - Licencias</h1>
         
         <div class="server-info">
-          🌐 Servidor: ${process.env.RENDER_EXTERNAL_URL || 'localhost:3000'} | 
-          ⏰ Hora del servidor: ${new Date().toLocaleString('es-PE')}
+          🌐 Servidor: ${process.env.RENDER_EXTERNAL_URL || 'localhost:' + PORT} | 
+          ⏰ ${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })}
           <button class="refresh-button" onclick="location.reload()">🔄 Actualizar</button>
         </div>
         
-        <!-- ESTADÍSTICAS -->
         <div class="stats-grid">
           <div class="stat-card blue">
             <div class="stat-label">Total Licencias</div>
@@ -500,7 +471,6 @@ app.get('/admin', (req, res) => {
           </div>
         </div>
         
-        <!-- GENERAR LICENCIA -->
         <h2>➕ Generar Nueva Licencia</h2>
         <form id="generarForm">
           <div class="form-group">
@@ -520,7 +490,6 @@ app.get('/admin', (req, res) => {
         
         <div id="resultado" class="result"></div>
         
-        <!-- LISTADO DE LICENCIAS -->
         <h2>📋 Listado de Licencias (${stats.total})</h2>
         ${licencias.length === 0 ? '<p>No hay licencias generadas aún.</p>' : `
           <table>
@@ -541,15 +510,11 @@ app.get('/admin', (req, res) => {
                   <td>${lic.nombre}</td>
                   <td>
                     <code>${lic.clave}</code>
-                    <button class="copy-button" onclick="copiarTexto('${lic.clave}')">📋 Copiar</button>
+                    <button class="copy-button" onclick="copiarTexto('${lic.clave}')">📋</button>
                   </td>
                   <td>
-                    ${lic.activada === true 
-                      ? '<span class="badge badge-success">✅ Activada</span>' 
-                      : '<span class="badge badge-warning">⏳ Pendiente</span>'}
-                    ${lic.activa === false 
-                      ? '<span class="badge badge-danger">❌ Desactivada</span>' 
-                      : ''}
+                    ${lic.activada === true ? '<span class="badge badge-success">✅ Activada</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}
+                    ${lic.activa === false ? '<span class="badge badge-danger">❌ Desactivada</span>' : ''}
                   </td>
                   <td>${new Date(lic.fecha_creacion).toLocaleDateString('es-PE')}</td>
                   <td>${new Date(lic.fecha_expiracion).toLocaleDateString('es-PE')}</td>
@@ -561,10 +526,8 @@ app.get('/admin', (req, res) => {
       </div>
       
       <script>
-        // Generar licencia
         document.getElementById('generarForm').addEventListener('submit', async (e) => {
           e.preventDefault();
-          
           const email = document.getElementById('email').value;
           const nombre = document.getElementById('nombre').value;
           const clave_admin = document.getElementById('clave_admin').value;
@@ -575,7 +538,6 @@ app.get('/admin', (req, res) => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email, nombre, clave_admin })
             });
-            
             const data = await response.json();
             const resultado = document.getElementById('resultado');
             
@@ -583,40 +545,32 @@ app.get('/admin', (req, res) => {
               resultado.className = 'result success';
               resultado.style.display = 'block';
               resultado.innerHTML = \`
-                <h3>✅ Licencia Generada Exitosamente</h3>
+                <h3>✅ Licencia Generada</h3>
                 <div class="licencia-box">
                   <strong>📧 Email:</strong> \${data.licencia.email}<br>
                   <strong>👤 Nombre:</strong> \${data.licencia.nombre}<br>
                   <strong>🔑 Clave:</strong> <code>\${data.licencia.clave}</code>
-                  <button class="copy-button" onclick="copiarTexto('\${data.licencia.clave}')">📋 Copiar Clave</button><br>
+                  <button class="copy-button" onclick="copiarTexto('\${data.licencia.clave}')">📋 Copiar</button><br>
                   <strong>📅 Expira:</strong> \${new Date(data.licencia.expira).toLocaleDateString('es-PE')}<br>
                 </div>
-                <p><strong>Envía estos datos al cliente.</strong></p>
               \`;
-              
-              // Limpiar formulario
               document.getElementById('generarForm').reset();
-              
-              // Recargar página después de 3 segundos
               setTimeout(() => location.reload(), 3000);
             } else {
               resultado.className = 'result error';
               resultado.style.display = 'block';
-              resultado.innerHTML = '<strong>❌ Error:</strong> ' + data.error;
+              resultado.innerHTML = '❌ Error: ' + data.error;
             }
           } catch (error) {
             const resultado = document.getElementById('resultado');
             resultado.className = 'result error';
             resultado.style.display = 'block';
-            resultado.innerHTML = '<strong>❌ Error de conexión:</strong> ' + error.message;
+            resultado.innerHTML = '❌ Error: ' + error.message;
           }
         });
         
-        // Copiar al portapapeles
         function copiarTexto(texto) {
-          navigator.clipboard.writeText(texto).then(() => {
-            alert('✅ Clave copiada al portapapeles');
-          });
+          navigator.clipboard.writeText(texto).then(() => alert('✅ Copiado'));
         }
       </script>
     </body>
@@ -624,20 +578,25 @@ app.get('/admin', (req, res) => {
   `);
 });
 
-// ==============================================================================
-// INICIAR SERVIDOR
-// ==============================================================================
-
+// Iniciar servidor
 app.listen(PORT, () => {
   console.log('='.repeat(60));
-  console.log('✅ SERVIDOR INICIADO CORRECTAMENTE');
+  console.log('🔐 SERVIDOR DE LICENCIAS INICIADO');
   console.log('='.repeat(60));
-  console.log(`🌐 URL principal:    http://localhost:${PORT}`);
-  console.log(`📊 Panel admin:      http://localhost:${PORT}/admin`);
-  console.log(`🔑 Clave admin:      ADMIN123`);
+  console.log(\`✅ Puerto: \${PORT}\`);
+  console.log(\`📊 Panel: http://localhost:\${PORT}/admin\`);
   console.log('='.repeat(60));
-  console.log('\n⚠️  NOTA: Esta versión usa memoria temporal');
-  console.log('   Las licencias se borrarán al cerrar el servidor\n');
-  console.log('Presione Ctrl+C para detener el servidor\n');
+  
+  if (!fs.existsSync(DB_FILE)) {
+    guardarBaseDatos({ licencias: {}, activaciones: [] });
+    console.log('✓ Base de datos inicializada');
+  } else {
+    const db = cargarBaseDatos();
+    console.log(\`✓ Licencias: \${Object.keys(db.licencias).length}\`);
+  }
+  console.log('');
+});
 
+process.on('uncaughtException', (error) => {
+  console.error('❌ Error:', error);
 });
