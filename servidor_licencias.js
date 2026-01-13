@@ -581,12 +581,6 @@ app.get('/admin', (req, res) => {
                   <strong>📅 Expira:</strong> \${new Date(data.licencia.expira).toLocaleDateString('es-PE')}<br>
                 </div>
               \`;
-                  <strong>👤 Nombre:</strong> \${data.licencia.nombre}<br>
-                  <strong>🔑 Clave:</strong> <code>\${data.licencia.clave}</code>
-                  <button class="copy-button" onclick="copiarTexto('\${data.licencia.clave}')">📋 Copiar</button><br>
-                  <strong>📅 Expira:</strong> \${new Date(data.licencia.expira).toLocaleDateString('es-PE')}<br>
-                </div>
-              \`;
               document.getElementById('generarForm').reset();
               setTimeout(() => location.reload(), 3000);
             } else {
