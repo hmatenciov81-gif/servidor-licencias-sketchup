@@ -1,0 +1,24 @@
+{
+  "name": "servidor-licencias-mongodb",
+  "version": "2.0.0",
+  "description": "Servidor de gestión de licencias con MongoDB Atlas",
+  "main": "servidor_licencias_mongodb.js",
+  "scripts": {
+    "start": "node servidor_licencias_mongodb.js",
+    "dev": "nodemon servidor_licencias_mongodb.js"
+  },
+  "keywords": ["licencias", "mongodb", "express", "api"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mongodb": "^6.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
