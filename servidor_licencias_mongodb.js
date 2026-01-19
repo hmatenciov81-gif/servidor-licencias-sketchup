@@ -1161,7 +1161,7 @@ app.get('/admin', async (req, res) => {
 // Página de Estadísticas
 // ============================================================================
 app.get('/admin/estadisticas', async (req, res) => {
-  try {
+ try {
     // Obtener estadísticas globales
     const hace30dias = new Date();
     hace30dias.setDate(hace30dias.getDate() - 30);
@@ -1205,10 +1205,9 @@ app.get('/admin/estadisticas', async (req, res) => {
       }
     });
     
-    // Top plugins
-    const topPlugins = Object.entries(pluginsGlobal)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
+    // Ordenar TODOS los plugins por uso
+    const todosPlugins = Object.entries(pluginsGlobal)
+      .sort((a, b) => b[1] - a[1]);
     
     // Top clientes
     const topClientes = Object.values(clientesStats)
@@ -1272,33 +1271,6 @@ app.get('/admin/estadisticas', async (req, res) => {
           color: #2d3748;
           margin-bottom: 20px;
         }
-        .plugin-bar {
-          margin-bottom: 15px;
-        }
-        .plugin-name {
-          font-size: 14px;
-          color: #4a5568;
-          margin-bottom: 5px;
-          font-weight: 500;
-        }
-        .bar-container {
-          background: #e2e8f0;
-          height: 30px;
-          border-radius: 6px;
-          overflow: hidden;
-          position: relative;
-        }
-        .bar-fill {
-          background: linear-gradient(90deg, #4299e1, #667eea);
-          height: 100%;
-          display: flex;
-          align-items: center;
-          padding: 0 10px;
-          color: white;
-          font-size: 12px;
-          font-weight: bold;
-          transition: width 0.3s;
-        }
         table {
           width: 100%;
           border-collapse: collapse;
@@ -1313,6 +1285,9 @@ app.get('/admin/estadisticas', async (req, res) => {
           color: #4a5568;
           font-weight: 600;
           font-size: 13px;
+        }
+        tr:hover {
+          background: #f7fafc;
         }
         .back-button {
           display: inline-block;
@@ -1332,6 +1307,22 @@ app.get('/admin/estadisticas', async (req, res) => {
           padding: 40px;
           color: #718096;
           font-style: italic;
+        }
+        .badge {
+          display: inline-block;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 600;
+        }
+        .badge-top {
+          background: #ffd700;
+          color: #744210;
+        }
+        .percentage {
+          color: #718096;
+          font-size: 12px;
+          margin-left: 10px;
         }
       </style>
     </head>
@@ -1361,21 +1352,38 @@ app.get('/admin/estadisticas', async (req, res) => {
           </div>
         </div>
         
-        ${topPlugins.length > 0 ? `
+        ${todosPlugins.length > 0 ? `
         <div class="section">
-          <h2>🏆 Top 10 Plugins Más Usados</h2>
-          ${topPlugins.map(([plugin, usos]) => {
-            const maxUsos = topPlugins[0][1];
-            const percentage = (usos / maxUsos) * 100;
-            return `
-              <div class="plugin-bar">
-                <div class="plugin-name">${plugin}</div>
-                <div class="bar-container">
-                  <div class="bar-fill" style="width: ${percentage}%">${usos} usos</div>
-                </div>
-              </div>
-            `;
-          }).join('')}
+          <h2>📊 Uso Detallado por Plugin (${todosPlugins.length} plugins)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Plugin</th>
+                <th>Total Usos</th>
+                <th>% del Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${todosPlugins.map(([plugin, usos], index) => {
+                const porcentaje = ((usos / totalUsos) * 100).toFixed(1);
+                const esTop3 = index < 3;
+                return `
+                  <tr>
+                    <td>${index + 1}${esTop3 ? ' <span class="badge badge-top">TOP</span>' : ''}</td>
+                    <td><strong>${plugin}</strong></td>
+                    <td>${usos}</td>
+                    <td><span class="percentage">${porcentaje}%</span></td>
+                  </tr>
+                `;
+              }).join('')}
+              <tr style="background: #f7fafc; font-weight: bold;">
+                <td colspan="2">TOTAL</td>
+                <td>${totalUsos}</td>
+                <td><span class="percentage">100%</span></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         ` : ''}
         
@@ -1417,7 +1425,6 @@ app.get('/admin/estadisticas', async (req, res) => {
     res.status(500).send('Error al cargar estadísticas: ' + error.message);
   }
 });
-
 // ============================================================================
 // TAREA PROGRAMADA: Limpieza automática (cada 24 horas)
 // ============================================================================
