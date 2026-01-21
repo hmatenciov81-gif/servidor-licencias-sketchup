@@ -710,7 +710,7 @@ app.get('/api/colecciones', async (req, res) => {
         descripcion: 'Colores con Textura',
         tamano: '84 MB',
         driveId: '1vfjT29x_xNnAE7AhBBVQskgUBTqq-6SH',  // ← Reemplazar con tu ID real
-        url: 'https://drive.usercontent.google.com/download?id=1vfjT29x_xNnAE7AhBBVQskgUBTqq-6SH&export=download&confirm='
+        url: 'https://drive.usercontent.google.com/download?id=1vfjT29x_xNnAE7AhBBVQskgUBTqq-6SH&export=download&confirm=t'
       },
       {
         nombre: 'melamina_pelikano',
@@ -718,7 +718,7 @@ app.get('/api/colecciones', async (req, res) => {
         descripcion: 'Colores con Textura',
         tamano: '51 MB',
         driveId: '1e5Y5bV97-dmMC6XX0ir1FtqxwtLfb54p',
-        url: 'https://drive.usercontent.google.com/download?id=1e5Y5bV97-dmMC6XX0ir1FtqxwtLfb54p&export=download&confirm='
+        url: 'https://drive.usercontent.google.com/download?id=1e5Y5bV97-dmMC6XX0ir1FtqxwtLfb54p&export=download&confirm=t'
       },
       {
         nombre: 'melamina_pelikano',
@@ -726,7 +726,7 @@ app.get('/api/colecciones', async (req, res) => {
         descripcion: 'Colores con Textura',
         tamano: '11 MB',
         driveId: '19Pp2UXIaHeHr5IYBXtgcMZ39VsK5rets',
-        url: 'https://drive.usercontent.google.com/download?id=19Pp2UXIaHeHr5IYBXtgcMZ39VsK5rets&export=download&confirm='
+        url: 'https://drive.usercontent.google.com/download?id=19Pp2UXIaHeHr5IYBXtgcMZ39VsK5rets&export=download&confirm=t'
       },
       {
         nombre: 'melamina_pelikano',
@@ -734,7 +734,7 @@ app.get('/api/colecciones', async (req, res) => {
         descripcion: 'Colores con Textura',
         tamano: '180 KB',
         driveId: '1nqnRPWA8WBvHJBTm1Jkkelwrb7yHp0yV',
-        url: url: 'https://drive.usercontent.google.com/download?id=1nqnRPWA8WBvHJBTm1Jkkelwrb7yHp0yV&export=download&confirm='
+        url: url: 'https://drive.usercontent.google.com/download?id=1nqnRPWA8WBvHJBTm1Jkkelwrb7yHp0yV&export=download&confirm=t'
       }
     ];
     
