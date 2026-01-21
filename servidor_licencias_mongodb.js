@@ -700,6 +700,78 @@ app.get('/api/estadisticas-globales', async (req, res) => {
   }
 });
 
+app.get('/api/colecciones', async (req, res) => {
+  try {
+    // Lista de colecciones con IDs de Google Drive
+    const colecciones = [
+      {
+        nombre: 'melamina_pelikano',
+        titulo: 'Colores Pelikano 2011-2017',
+        descripcion: 'Colores con Textura',
+        tamano: '84 MB',
+        driveId: '1vfjT29x_xNnAE7AhBBVQskgUBTqq-6SH',  // ← Reemplazar con tu ID real
+        url: 'https://drive.google.com/uc?export=download&id=1vfjT29x_xNnAE7AhBBVQskgUBTqq-6SH'
+      },
+      {
+        nombre: 'melamina_pelikano',
+        titulo: 'Colores Pelikano 2021-2022',
+        descripcion: 'Colores con Textura',
+        tamano: '51 MB',
+        driveId: '1e5Y5bV97-dmMC6XX0ir1FtqxwtLfb54p',
+        url: 'https://drive.google.com/uc?export=download&id=1e5Y5bV97-dmMC6XX0ir1FtqxwtLfb54p'
+      },
+      {
+        nombre: 'melamina_pelikano',
+        titulo: 'Colores Pelikano 2023-2024',
+        descripcion: 'Colores con Textura',
+        tamano: '11 MB',
+        driveId: '19Pp2UXIaHeHr5IYBXtgcMZ39VsK5rets',
+        url: 'https://drive.google.com/uc?export=download&id=19Pp2UXIaHeHr5IYBXtgcMZ39VsK5rets'
+      },
+      {
+        nombre: 'melamina_pelikano',
+        titulo: 'Colores Pelikano 2025-2026',
+        descripcion: 'Colores con Textura',
+        tamano: '180 KB',
+        driveId: '1nqnRPWA8WBvHJBTm1Jkkelwrb7yHp0yV',
+        url: 'https://drive.google.com/uc?export=download&id=1nqnRPWA8WBvHJBTm1Jkkelwrb7yHp0yV'
+      }
+    ];
+    
+    res.json({ colecciones });
+    
+    console.log('[COLECCIONES] Lista enviada');
+    
+  } catch (error) {
+    console.error('[COLECCIONES] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// API: Verificar acceso (opcional)
+// ============================================================================
+app.post('/api/colecciones/verificar-acceso', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    // Verificar que el cliente tenga licencia válida
+    const licencia = await db.collection('licencias').findOne({ email });
+    
+    if (!licencia || licencia.estado !== 'activada') {
+      return res.json({ 
+        acceso: false, 
+        mensaje: 'Necesitas una licencia activa' 
+      });
+    }
+    
+    res.json({ acceso: true });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Panel de administración
 app.get('/admin', async (req, res) => {
   try {
