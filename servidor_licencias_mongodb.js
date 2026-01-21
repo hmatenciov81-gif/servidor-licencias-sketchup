@@ -734,7 +734,7 @@ app.get('/api/colecciones', async (req, res) => {
         descripcion: 'Colores con Textura',
         tamano: '180 KB',
         driveId: '1nqnRPWA8WBvHJBTm1Jkkelwrb7yHp0yV',
-        url: url: 'https://drive.usercontent.google.com/download?id=1nqnRPWA8WBvHJBTm1Jkkelwrb7yHp0yV&export=download&confirm=t'
+        url:  'https://drive.usercontent.google.com/download?id=1nqnRPWA8WBvHJBTm1Jkkelwrb7yHp0yV&export=download&confirm=t'
       }
     ];
     
