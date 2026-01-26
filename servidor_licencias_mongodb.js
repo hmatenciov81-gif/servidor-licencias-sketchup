@@ -1485,23 +1485,30 @@ app.get('/api/colecciones', (req, res) => {
       nombre: 'PELIKANO_2023_2024',
       titulo: 'Colores Pelikano 2023-2024',
       descripcion: '10 colores modernos de la colección 2023-2024',
-      tamano: '3.5 MB',
+      tamano: '2.75 MB',
       url: 'https://drive.usercontent.google.com/download?id=19Pp2UXIaHeHr5IYBXtgcMZ39VsK5rets&export=download&confirm=t'
     },
     {
       nombre: 'PELIKANO_2021_2022',
       titulo: 'Colores Pelikano 2021-2022',
       descripcion: '9 colores de la colección 2021-2022',
-      tamano: '27 MB',
+      tamano: '25.4 MB',
       url: 'https://drive.usercontent.google.com/download?id=1e5Y5bV97-dmMC6XX0ir1FtqxwtLfb54p&export=download&confirm=t'
     },
     {
       nombre: 'PELIKANO_2011_2020',
       titulo: 'Colores Pelikano 2011-2020',
       descripcion: '45 colores de la colección 2011-2020',
-      tamano: '88 MB',
+      tamano: '91.5 MB',
       url: 'https://drive.usercontent.google.com/download?id=1xje9NAYn6QpuFIGgp2rK1lMWNJAx5PDi&export=download&confirm=t'
-    }
+    },
+    {
+      nombre: 'VESTO',
+      titulo: 'Colores Vesto',
+      descripcion: '26 colores',
+      tamano: '8.33 MB',
+      url: 'https://drive.usercontent.google.com/download?id=18iOfcVaEBqfxZoYxzViqvFmthHUF-zeu&export=download&confirm=t'
+    
     // Agrega más colecciones según las subas a Google Drive
     // IMPORTANTE: El campo "nombre" será el nombre de la carpeta en Materials
   ];
