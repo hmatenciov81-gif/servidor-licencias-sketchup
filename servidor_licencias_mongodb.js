@@ -1508,7 +1508,7 @@ app.get('/api/colecciones', (req, res) => {
       descripcion: '26 colores',
       tamano: '8.33 MB',
       url: 'https://drive.usercontent.google.com/download?id=18iOfcVaEBqfxZoYxzViqvFmthHUF-zeu&export=download&confirm=t'
-    
+    }
     // Agrega más colecciones según las subas a Google Drive
     // IMPORTANTE: El campo "nombre" será el nombre de la carpeta en Materials
   ];
