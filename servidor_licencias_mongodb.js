@@ -14,6 +14,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/licenc
 console.log('🔍 DEBUG: API_KEY cargada:', API_KEY ? `${API_KEY.substring(0, 15)}...` : 'NO DEFINIDA');
 console.log('🔍 DEBUG: Longitud:', API_KEY ? API_KEY.length : 0);
 
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -27,6 +28,9 @@ app.use(express.static('public')); // Servir archivos estáticos
 // ============================================================================
 
 app.use('/api', (req, res, next) => {
+  // 🔍 Ver qué headers llegan
+  console.log(`📨 [${req.method}] ${req.path}`);
+  console.log(`   Headers: ${JSON.stringify(req.headers)}`);
   // Rutas públicas que NO requieren API Key
   const rutasPublicas = [
     '/api/colecciones',           // Lista de colecciones de materiales
@@ -54,19 +58,25 @@ app.use('/api', (req, res, next) => {
     });
   }
   
-  // Validar que la API Key sea correcta
-  if (apiKey !== API_KEY) {
-    console.log('⚠️ [SEGURIDAD] API Key INVÁLIDA rechazada');
-    console.log(`  IP: ${req.ip}`);
-    console.log(`  Ruta: ${req.path}`);
-    console.log(`  Key recibida: ${apiKey.substring(0, 10)}...`);
-    
-    return res.status(401).json({ 
-      valida: false,
-      error: 'No autorizado',
-      mensaje: 'API Key inválida'
-    });
-  }
+ // Validar que la API Key sea correcta
+// Debug mejorado para comparación
+const apiKeyRecibida = apiKey.trim();
+const apiKeyServidor = API_KEY.trim();
+
+if (apiKeyRecibida !== apiKeyServidor) {
+  console.log('⚠️ [SEGURIDAD] API Key INVÁLIDA rechazada');
+  console.log(`  IP: ${req.ip}`);
+  console.log(`  Ruta: ${req.path}`);
+  console.log(`  🔍 Key recibida: "${apiKey.substring(0, 20)}..." (longitud: ${apiKey.length})`);
+  console.log(`  🔍 Key esperada: "${API_KEY.substring(0, 20)}..." (longitud: ${API_KEY.length})`);
+  console.log(`  🔍 Coinciden: ${apiKeyRecibida === apiKeyServidor}`);
+  
+  return res.status(401).json({ 
+    valida: false,
+    error: 'No autorizado',
+    mensaje: 'API Key inválida'
+  });
+}
   
   // API Key válida - permitir continuar
   next();
