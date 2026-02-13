@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || 'ADMIN123';
 const API_KEY = process.env.API_KEY; // ← NUEVA: Variable de entorno para API Key
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/licencias';
+// 🔍 DEBUG: Ver qué API Key tiene el servidor
+console.log('🔍 DEBUG: API_KEY cargada:', API_KEY ? `${API_KEY.substring(0, 15)}...` : 'NO DEFINIDA');
+console.log('🔍 DEBUG: Longitud:', API_KEY ? API_KEY.length : 0);
 
 // Middleware
 app.use(cors());
