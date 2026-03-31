@@ -1775,7 +1775,7 @@ app.get('/instalador', (req, res) => {
 
 // Descargar instalador desde Google Drive
 app.get('/api/instalador/download', (req, res) => {
-  const googleDriveId = '1C7bO2DcMgEn1mLVOK0KYm4uLrNfFSZ3v';
+  const googleDriveId = '1oyCqA7E2TA9DWTRa46Ui64i0UpG6T1ON';
   const url = `https://drive.usercontent.google.com/download?id=${googleDriveId}&export=download&confirm=t`;
   
   console.log('[INSTALADOR] Redirigiendo descarga a Google Drive');
